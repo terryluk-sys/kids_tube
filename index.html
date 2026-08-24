@@ -33,6 +33,7 @@
       user-select: none;
     }
 
+    /* 上方工具列 */
     .top-bar {
       display: flex;
       align-items: center;
@@ -45,6 +46,8 @@
       flex-shrink: 0;
       flex-wrap: wrap;
     }
+
+    /* 頻道快捷列 */
     .channel-scroll {
       display: flex;
       gap: 10px;
@@ -90,14 +93,14 @@
       max-width: 55px;
     }
 
-    /* 搜尋與按鈕樣式 */
+    /* 搜尋框與功能按鈕 */
     .search-box {
       border: 1.5px solid #E0E0E0;
       border-radius: 12px;
       padding: 6px 10px;
       font-size: 13px;
       outline: none;
-      width: 140px;
+      width: 130px;
       background: #FFF;
     }
     .search-box:focus { border-color: var(--secondary); }
@@ -116,6 +119,7 @@
     }
     .action-btn.fav-mode { background: var(--primary); }
 
+    /* 主要版面結構 */
     .main-layout {
       display: flex;
       flex-direction: column;
@@ -133,7 +137,7 @@
       position: relative;
       width: 100%;
       height: 0;
-      padding-bottom: 56.25%;
+      padding-bottom: 56.25%; /* 16:9 比例 */
       background: #000;
       border-radius: 16px;
       overflow: hidden;
@@ -171,6 +175,7 @@
       flex-shrink: 0;
     }
 
+    /* 影片清單卡片區 */
     .list-section {
       flex: 1;
       background: rgba(255, 255, 255, 0.6);
@@ -212,14 +217,16 @@
     .card-btns { display: flex; justify-content: space-between; align-items: center; }
     .icon-btn { background: none; border: none; font-size: 16px; cursor: pointer; padding: 0 4px; }
 
+    /* 橫向模式 (自動對調左右版面) */
     @media (orientation: landscape) {
       .main-layout { flex-direction: row; }
       .player-section { flex: 1.6; }
       .list-section { flex: 1; }
       .current-title { font-size: 15px; }
-      .search-box { width: 160px; }
+      .search-box { width: 150px; }
     }
 
+    /* 家長設定彈窗 Modal */
     .modal {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 100;
@@ -235,7 +242,7 @@
 </head>
 <body>
 
-  <!-- 上方：頻道選單 + 搜尋框 + 收藏清單切換 -->
+  <!-- 頂部工具列 -->
   <div class="top-bar">
     <div class="channel-scroll" id="channel-list"></div>
     <input type="text" id="search-input" class="search-box" placeholder="🔍 搜尋影片..." oninput="renderVideos()">
@@ -243,8 +250,9 @@
     <button class="action-btn" style="background: #A8DADC;" onclick="openModal()">⚙️ 管理</button>
   </div>
 
-  <!-- 主區域 -->
+  <!-- 主內容區域 -->
   <div class="main-layout">
+    <!-- 播放器區塊 -->
     <div class="player-section">
       <div class="player-wrapper">
         <iframe id="yt-player" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
@@ -255,6 +263,7 @@
       </div>
     </div>
 
+    <!-- 影片列表區塊 -->
     <div class="list-section" id="video-list"></div>
   </div>
 
@@ -277,6 +286,7 @@
   </div>
 
 <script>
+  // 專屬 Firebase 憑證設定
   const firebaseConfig = {
     apiKey: "AIzaSyC-i8XSzmM2AheKKkvL_Ni7GF2QlGTva3g",
     authDomain: "kidstube-43d03.firebaseapp.com",
@@ -296,6 +306,7 @@
   let showFavOnly = false;
   let currentPlayingId = null;
 
+  // 1. YouTube 連結強效解析器 (支援 watch, shorts, youtu.be, 及帶有追蹤參數的分享鏈接)
   function extractVideoID(url) {
     if (!url) return null;
     const regExp = /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/;
@@ -303,6 +314,7 @@
     return (match && match[1]) ? match[1] : (url.length === 11 ? url : null);
   }
 
+  // 2. 頻道 Handle 與名稱解析器
   function parseChannelInfo(input) {
     if (!input) return { name: '新頻道', icon: '📺' };
     const str = input.trim();
@@ -313,16 +325,19 @@
     return { name: str, icon: '📺' };
   }
 
+  // 3. 即時監聽 Firebase 頻道資料庫
   db.collection('channels').onSnapshot(snapshot => {
     channels = [{ id: 'all', name: '全部', icon: '🌈' }];
     snapshot.forEach(doc => channels.push({ id: doc.id, ...doc.data() }));
     renderChannels();
   });
 
+  // 4. 即時監聽 Firebase 影片資料庫 (兼顧時間排序與防崩潰邏輯)
   db.collection('videos').onSnapshot(snapshot => {
     videos = [];
     snapshot.forEach(doc => videos.push({ id: doc.id, ...doc.data() }));
     
+    // 安全地進行內存時間排序
     videos.sort((a, b) => {
       const timeA = a.createdAt ? a.createdAt.seconds : 0;
       const timeB = b.createdAt ? b.createdAt.seconds : 0;
@@ -332,11 +347,13 @@
     renderVideos();
     updateCurrentFavBtnUI();
 
+    // 預設播放最新一部影片
     if (videos.length > 0 && !currentPlayingId) {
       playVideo(videos[0].id, videos[0].title);
     }
   });
 
+  // 5. 使用 Invidious (yewtu.be) 節點播放，成功繞過「Playback disabled」限制
   function playVideo(id, title) {
     currentPlayingId = id;
     document.getElementById('yt-player').src = `https://yewtu.be/embed/${id}?autoplay=1`;
@@ -344,6 +361,7 @@
     updateCurrentFavBtnUI();
   }
 
+  // 6. 更新播放器下方「收藏這部」按鈕狀態
   function updateCurrentFavBtnUI() {
     const btn = document.getElementById('current-fav-btn');
     if (!currentPlayingId) return;
@@ -357,6 +375,7 @@
     }
   }
 
+  // 7. 切換當前播放影片的收藏狀態
   async function toggleCurrentPlayingFav() {
     if (!currentPlayingId) return;
     const currentVid = videos.find(v => v.id === currentPlayingId);
@@ -365,6 +384,7 @@
     }
   }
 
+  // 8. 繪製頻道選單
   function renderChannels() {
     const container = document.getElementById('channel-list');
     const select = document.getElementById('new-vid-ch');
@@ -394,6 +414,7 @@
     });
   }
 
+  // 9. 繪製影片清單 (綜合：關鍵字搜尋 + 頻道篩選 + 收藏篩選)
   function renderVideos() {
     const container = document.getElementById('video-list');
     const searchQuery = document.getElementById('search-input').value.toLowerCase().trim();
@@ -430,6 +451,7 @@
     });
   }
 
+  // 10. 頻道篩選觸發
   function filterByChannel(chId) {
     showFavOnly = false;
     currentChannelFilter = chId;
@@ -438,6 +460,7 @@
     renderVideos();
   }
 
+  // 11. 收藏清單模式切換
   function toggleFavVideoFilter() {
     showFavOnly = !showFavOnly;
     document.getElementById('fav-filter-btn').classList.toggle('fav-mode', showFavOnly);
@@ -445,16 +468,19 @@
     renderVideos();
   }
 
+  // 12. 更新影片收藏狀態
   async function toggleFav(id, currentStatus) {
     await db.collection('videos').doc(id).update({ favorite: !currentStatus });
   }
 
+  // 13. 刪除影片
   async function deleteVid(id) {
     if(confirm('要刪除這部影片嗎？')) {
       await db.collection('videos').doc(id).delete();
     }
   }
 
+  // 14. 新增頻道
   async function addChannel() {
     const input = document.getElementById('new-ch-name').value;
     const customIcon = document.getElementById('new-ch-icon').value.trim();
@@ -469,6 +495,7 @@
     document.getElementById('new-ch-icon').value = '';
   }
 
+  // 15. 新增影片
   async function addVideo() {
     const rawUrl = document.getElementById('new-vid-id').value;
     const title = document.getElementById('new-vid-title').value.trim() || '未命名影片';
@@ -489,6 +516,7 @@
     closeModal();
   }
 
+  // Modal 控制
   function openModal() { document.getElementById('admin-modal').style.display = 'flex'; }
   function closeModal() { document.getElementById('admin-modal').style.display = 'none'; }
 </script>
