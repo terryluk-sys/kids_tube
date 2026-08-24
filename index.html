@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title> Aria's Youtube Channel 🎈</title>
+  <title>兒童影音世界 🎈</title>
   
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -237,14 +237,15 @@
   </div>
 
 <script>
-  // 請填入你的 Firebase 設定
+  // 你的專屬 Firebase 設定
   const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyC-i8XSzmM2AheKKkvL_Ni7GF2QlGTva3g",
+    authDomain: "kidstube-43d03.firebaseapp.com",
+    projectId: "kidstube-43d03",
+    storageBucket: "kidstube-43d03.firebasestorage.app",
+    messagingSenderId: "524775619895",
+    appId: "1:524775619895:web:72713188a973d84cd36eb2",
+    measurementId: "G-1MCF5JW7JZ"
   };
 
   firebase.initializeApp(firebaseConfig);
@@ -272,22 +273,32 @@
     return { name: str, icon: '📺' };
   }
 
+  // 監聽頻道資料庫
   db.collection('channels').onSnapshot(snapshot => {
     channels = [{ id: 'all', name: '全部', icon: '🌈' }];
     snapshot.forEach(doc => channels.push({ id: doc.id, ...doc.data() }));
     renderChannels();
   });
 
-  db.collection('videos').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
+  // 監聽影片資料庫（移除預設排序，防止舊數據缺失欄位導致卡死）
+  db.collection('videos').onSnapshot(snapshot => {
     videos = [];
     snapshot.forEach(doc => videos.push({ id: doc.id, ...doc.data() }));
+    
+    // 在記憶體中依時間排序
+    videos.sort((a, b) => {
+      const timeA = a.createdAt ? a.createdAt.seconds : 0;
+      const timeB = b.createdAt ? b.createdAt.seconds : 0;
+      return timeB - timeA;
+    });
+
     renderVideos();
     if (videos.length > 0 && !document.getElementById('yt-player').src) {
       playVideo(videos[0].id, videos[0].title);
     }
   });
 
-  // 使用 Invidious 節點播放，成功解決「Playback on other websites has been disabled」問題
+  // 改用 Invidious (yewtu.be) 節點，成功繞過 YouTube 官方內嵌限制
   function playVideo(id, title) {
     document.getElementById('yt-player').src = `https://yewtu.be/embed/${id}?autoplay=1`;
     document.getElementById('now-playing-title').innerText = title;
