@@ -36,13 +36,14 @@
     .top-bar {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       background: rgba(255, 255, 255, 0.85);
       padding: 8px 12px;
       border-radius: 18px;
       backdrop-filter: blur(5px);
       box-shadow: 0 4px 10px rgba(0,0,0,0.05);
       flex-shrink: 0;
+      flex-wrap: wrap;
     }
     .channel-scroll {
       display: flex;
@@ -61,8 +62,8 @@
       min-width: 55px;
     }
     .channel-avatar {
-      width: 48px;
-      height: 48px;
+      width: 44px;
+      height: 44px;
       border-radius: 50%;
       background: var(--yellow);
       border: 3px solid #FFF;
@@ -70,7 +71,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 22px;
+      font-size: 20px;
       overflow: hidden;
     }
     .channel-avatar img { width: 100%; height: 100%; object-fit: cover; }
@@ -89,11 +90,23 @@
       max-width: 55px;
     }
 
+    /* 搜尋與按鈕樣式 */
+    .search-box {
+      border: 1.5px solid #E0E0E0;
+      border-radius: 12px;
+      padding: 6px 10px;
+      font-size: 13px;
+      outline: none;
+      width: 140px;
+      background: #FFF;
+    }
+    .search-box:focus { border-color: var(--secondary); }
+
     .action-btn {
       background: var(--secondary);
       color: white;
       border: none;
-      padding: 8px 12px;
+      padding: 7px 11px;
       border-radius: 12px;
       font-size: 13px;
       font-weight: bold;
@@ -130,13 +143,32 @@
       position: absolute;
       top: 0; left: 0; width: 100%; height: 100%; border: 0;
     }
+    
+    .player-controls-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 6px;
+      gap: 10px;
+    }
     .current-title {
       font-size: 14px;
       font-weight: bold;
-      margin-top: 6px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      flex: 1;
+    }
+    .player-fav-btn {
+      background: #FFF;
+      border: 1.5px solid var(--yellow);
+      padding: 4px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      flex-shrink: 0;
     }
 
     .list-section {
@@ -184,7 +216,8 @@
       .main-layout { flex-direction: row; }
       .player-section { flex: 1.6; }
       .list-section { flex: 1; }
-      .current-title { font-size: 15px; margin-top: 8px; }
+      .current-title { font-size: 15px; }
+      .search-box { width: 160px; }
     }
 
     .modal {
@@ -202,23 +235,30 @@
 </head>
 <body>
 
+  <!-- 上方：頻道選單 + 搜尋框 + 收藏清單切換 -->
   <div class="top-bar">
     <div class="channel-scroll" id="channel-list"></div>
-    <button class="action-btn" id="fav-filter-btn" onclick="toggleFavVideoFilter()">⭐ 收藏</button>
+    <input type="text" id="search-input" class="search-box" placeholder="🔍 搜尋影片..." oninput="renderVideos()">
+    <button class="action-btn" id="fav-filter-btn" onclick="toggleFavVideoFilter()">⭐ 收藏清單</button>
     <button class="action-btn" style="background: #A8DADC;" onclick="openModal()">⚙️ 管理</button>
   </div>
 
+  <!-- 主區域 -->
   <div class="main-layout">
     <div class="player-section">
       <div class="player-wrapper">
         <iframe id="yt-player" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
       </div>
-      <div class="current-title" id="now-playing-title">請選擇影片播放</div>
+      <div class="player-controls-bar">
+        <div class="current-title" id="now-playing-title">請選擇影片播放</div>
+        <button id="current-fav-btn" class="player-fav-btn" onclick="toggleCurrentPlayingFav()">☆ 收藏這部</button>
+      </div>
     </div>
 
     <div class="list-section" id="video-list"></div>
   </div>
 
+  <!-- 家長管理 Modal -->
   <div class="modal" id="admin-modal">
     <div class="modal-content">
       <h3>🔒 家長設定</h3>
@@ -237,7 +277,6 @@
   </div>
 
 <script>
-  // 你的專屬 Firebase 設定
   const firebaseConfig = {
     apiKey: "AIzaSyC-i8XSzmM2AheKKkvL_Ni7GF2QlGTva3g",
     authDomain: "kidstube-43d03.firebaseapp.com",
@@ -255,6 +294,7 @@
   let videos = [];
   let currentChannelFilter = 'all';
   let showFavOnly = false;
+  let currentPlayingId = null;
 
   function extractVideoID(url) {
     if (!url) return null;
@@ -273,19 +313,16 @@
     return { name: str, icon: '📺' };
   }
 
-  // 監聽頻道資料庫
   db.collection('channels').onSnapshot(snapshot => {
     channels = [{ id: 'all', name: '全部', icon: '🌈' }];
     snapshot.forEach(doc => channels.push({ id: doc.id, ...doc.data() }));
     renderChannels();
   });
 
-  // 監聽影片資料庫（移除預設排序，防止舊數據缺失欄位導致卡死）
   db.collection('videos').onSnapshot(snapshot => {
     videos = [];
     snapshot.forEach(doc => videos.push({ id: doc.id, ...doc.data() }));
     
-    // 在記憶體中依時間排序
     videos.sort((a, b) => {
       const timeA = a.createdAt ? a.createdAt.seconds : 0;
       const timeB = b.createdAt ? b.createdAt.seconds : 0;
@@ -293,15 +330,39 @@
     });
 
     renderVideos();
-    if (videos.length > 0 && !document.getElementById('yt-player').src) {
+    updateCurrentFavBtnUI();
+
+    if (videos.length > 0 && !currentPlayingId) {
       playVideo(videos[0].id, videos[0].title);
     }
   });
 
-  // 改用 Invidious (yewtu.be) 節點，成功繞過 YouTube 官方內嵌限制
   function playVideo(id, title) {
+    currentPlayingId = id;
     document.getElementById('yt-player').src = `https://yewtu.be/embed/${id}?autoplay=1`;
     document.getElementById('now-playing-title').innerText = title;
+    updateCurrentFavBtnUI();
+  }
+
+  function updateCurrentFavBtnUI() {
+    const btn = document.getElementById('current-fav-btn');
+    if (!currentPlayingId) return;
+    const currentVid = videos.find(v => v.id === currentPlayingId);
+    if (currentVid && currentVid.favorite) {
+      btn.innerText = '⭐ 已收藏';
+      btn.style.background = '#FFD166';
+    } else {
+      btn.innerText = '☆ 收藏這部';
+      btn.style.background = '#FFF';
+    }
+  }
+
+  async function toggleCurrentPlayingFav() {
+    if (!currentPlayingId) return;
+    const currentVid = videos.find(v => v.id === currentPlayingId);
+    if (currentVid) {
+      await toggleFav(currentVid.id, currentVid.favorite);
+    }
   }
 
   function renderChannels() {
@@ -335,12 +396,14 @@
 
   function renderVideos() {
     const container = document.getElementById('video-list');
+    const searchQuery = document.getElementById('search-input').value.toLowerCase().trim();
     container.innerHTML = '';
 
     let filtered = videos.filter(v => {
-      if (showFavOnly) return v.favorite;
-      if (currentChannelFilter !== 'all') return v.channelId === currentChannelFilter;
-      return true;
+      const matchSearch = !searchQuery || v.title.toLowerCase().includes(searchQuery);
+      const matchFav = !showFavOnly || v.favorite;
+      const matchCh = currentChannelFilter === 'all' || v.channelId === currentChannelFilter;
+      return matchSearch && matchFav && matchCh;
     });
 
     if (filtered.length === 0) {
