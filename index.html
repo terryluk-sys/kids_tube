@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>兒童影音世界 🎈</title>
   
-  <!-- 引入 Firebase SDK (Compat 版本) -->
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
@@ -33,7 +33,6 @@
       user-select: none;
     }
 
-    /* 頂部頻道快捷列 */
     .top-bar {
       display: flex;
       align-items: center;
@@ -104,7 +103,6 @@
     }
     .action-btn.fav-mode { background: var(--primary); }
 
-    /* 主架構 */
     .main-layout {
       display: flex;
       flex-direction: column;
@@ -179,12 +177,7 @@
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
-    .video-date {
-      font-size: 11px;
-      color: #888;
-      margin-top: 2px;
-    }
-    .card-btns { display: flex; justify-content: space-between; align-items: center; margin-top: 2px; }
+    .card-btns { display: flex; justify-content: space-between; align-items: center; }
     .icon-btn { background: none; border: none; font-size: 16px; cursor: pointer; padding: 0 4px; }
 
     @media (orientation: landscape) {
@@ -194,14 +187,12 @@
       .current-title { font-size: 15px; margin-top: 8px; }
     }
 
-    /* 家長 Modal */
     .modal {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 100;
     }
     .modal-content {
-      background: white; padding: 20px; border-radius: 20px; width: 330px;
-      max-height: 90vh; overflow-y: auto;
+      background: white; padding: 20px; border-radius: 20px; width: 310px;
       display: flex; flex-direction: column; gap: 8px;
     }
     .modal-content input, .modal-content select {
@@ -220,7 +211,7 @@
   <div class="main-layout">
     <div class="player-section">
       <div class="player-wrapper">
-        <iframe id="yt-player" src="" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+        <iframe id="yt-player" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
       </div>
       <div class="current-title" id="now-playing-title">請選擇影片播放</div>
     </div>
@@ -231,42 +222,30 @@
   <div class="modal" id="admin-modal">
     <div class="modal-content">
       <h3>🔒 家長設定</h3>
-      
-      <b>1. 自動新增頻道 (輸入 @Handle 或網址)</b>
-      <input type="text" id="new-ch-input" placeholder="例: @PeppaPig">
-      <button class="action-btn" id="btn-add-ch" onclick="addChannelAuto()">🚀 抓取頻道與最新影片</button>
-      <button class="action-btn" id="btn-refresh-all" style="background: #FFB703; margin-top: 4px;" onclick="refreshAllChannels()">🔄 一鍵刷新所有頻道新片</button>
-      
-      <hr style="width:100%; margin: 6px 0;">
-
-      <b>2. 管理與刪除頻道 (需回答問答)</b>
-      <div id="admin-channel-list" style="max-height: 120px; overflow-y: auto; border: 1px solid #eee; padding: 6px; border-radius: 8px; background: #fafafa;"></div>
-
-      <hr style="width:100%; margin: 6px 0;">
-      
-      <b>3. 單獨新增影片 (貼上分享連結)</b>
-      <input type="text" id="new-vid-id" placeholder="貼上 YouTube 分享網址">
-      <input type="text" id="new-vid-title" placeholder="自訂標題 (可不填，自動獲取)">
+      <b>1. 新增頻道</b>
+      <input type="text" id="new-ch-name" placeholder="頻道名稱或網址 (@Handle)">
+      <input type="text" id="new-ch-icon" placeholder="Emoji 或圖片網址 (選填)">
+      <button class="action-btn" onclick="addChannel()">新增頻道</button>
+      <hr style="width:100%; margin: 5px 0;">
+      <b>2. 新增影片 (貼上 YouTube 分享連結)</b>
+      <input type="text" id="new-vid-id" placeholder="貼上 YouTube / Shorts 分享網址">
+      <input type="text" id="new-vid-title" placeholder="影片標題 (選填)">
       <select id="new-vid-ch"></select>
-      <button class="action-btn" onclick="addSingleVideo()">新增單部影片</button>
-      
-      <button onclick="closeModal()" style="margin-top: 5px; background: none; border: none; color: #888; cursor: pointer;">關閉</button>
+      <button class="action-btn" onclick="addVideo()">新增影片</button>
+      <button onclick="closeModal()" style="margin-top: 5px; background: none; border: none; color: #888;">關閉</button>
     </div>
   </div>
 
 <script>
-  // ================= 1. 金鑰與數據設定 =================
+  // 請填入你的 Firebase 設定
   const firebaseConfig = {
-    apiKey: "AIzaSyC-i8XSzmM2AheKKkvL_Ni7GF2QlGTva3g",
-    authDomain: "kidstube-43d03.firebaseapp.com",
-    projectId: "kidstube-43d03",
-    storageBucket: "kidstube-43d03.firebasestorage.app",
-    messagingSenderId: "524775619895",
-    appId: "1:524775619895:web:72713188a973d84cd36eb2",
-    measurementId: "G-1MCF5JW7JZ"
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "123456789",
+    appId: "YOUR_APP_ID"
   };
-
-  const YOUTUBE_API_KEY = "AIzaSyBDuFL2ltKTowEdaa8wQxokW7AkQMkI2Wg";
 
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
@@ -276,15 +255,6 @@
   let currentChannelFilter = 'all';
   let showFavOnly = false;
 
-  // ================= 2. 解析與格式化工具 =================
-  function extractHandle(input) {
-    if (!input) return null;
-    const str = input.trim();
-    if (str.startsWith('@')) return str;
-    const match = str.match(/@[\w.-]+/);
-    return match ? match[0] : null;
-  }
-
   function extractVideoID(url) {
     if (!url) return null;
     const regExp = /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/;
@@ -292,171 +262,16 @@
     return (match && match[1]) ? match[1] : (url.length === 11 ? url : null);
   }
 
-  function formatDate(isoStr) {
-    if (!isoStr) return '未知日期';
-    const d = new Date(isoStr);
-    if (isNaN(d.getTime())) return '未知日期';
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  }
-
-  function playVideo(id, title) {
-    const player = document.getElementById('yt-player');
-    player.src = `https://www.youtube.com/embed/${id}?autoplay=1&enablejsapi=1`;
-    document.getElementById('now-playing-title').innerText = title;
-    document.querySelector('.player-section').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
-
-  // ================= 3. YouTube API & 頻道/影片操作 =================
-
-  async function addChannelAuto() {
-    const input = document.getElementById('new-ch-input').value.trim();
-    const btn = document.getElementById('btn-add-ch');
-    
-    if (!input) return alert("請輸入頻道 Handle (例: @PeppaPig) 或網址！");
-    const handle = extractHandle(input);
-    if (!handle) return alert("無法識別 Handle，格式請使用 @頻道名稱 (例: @PeppaPig)");
-
-    btn.innerText = "⏳ 抓取中...";
-    btn.disabled = true;
-
-    try {
-      const chRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails&forHandle=${handle}&key=${YOUTUBE_API_KEY}`);
-      const chData = await chRes.json();
-
-      if (!chData.items || chData.items.length === 0) {
-        throw new Error("找不到該頻道，請確認 Handle 是否正確！");
-      }
-
-      const channelItem = chData.items[0];
-      const channelId = channelItem.id;
-      const channelName = channelItem.snippet.title;
-      const channelIcon = channelItem.snippet.thumbnails.default.url;
-      const uploadsPlaylistId = channelItem.contentDetails.relatedPlaylists.uploads;
-
-      await db.collection('channels').doc(channelId).set({
-        name: channelName,
-        icon: channelIcon,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-
-      const vidRes = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${uploadsPlaylistId}&maxResults=10&key=${YOUTUBE_API_KEY}`);
-      const vidData = await vidRes.json();
-
-      if (vidData.items && vidData.items.length > 0) {
-        const batch = db.batch();
-        vidData.items.forEach(item => {
-          const videoId = item.snippet.resourceId.videoId;
-          const videoTitle = item.snippet.title;
-          const publishedAt = item.contentDetails?.videoPublishedAt || item.snippet.publishedAt;
-          const docRef = db.collection('videos').doc(videoId);
-          
-          batch.set(docRef, {
-            title: videoTitle,
-            channelId: channelId,
-            publishedAt: publishedAt,
-            favorite: false,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-          }, { merge: true });
-        });
-        await batch.commit();
-      }
-
-      document.getElementById('new-ch-input').value = '';
-      closeModal();
-      alert(`✅ 成功新增「${channelName}」，並包含最新上架日期！`);
-
-    } catch (error) {
-      alert("❌ 失敗：" + error.message);
-    } finally {
-      btn.innerText = "🚀 抓取頻道與最新影片";
-      btn.disabled = false;
+  function parseChannelInfo(input) {
+    if (!input) return { name: '新頻道', icon: '📺' };
+    const str = input.trim();
+    if (str.includes('@')) {
+      const handleMatch = str.match(/@[\w.-]+/);
+      if (handleMatch) return { name: handleMatch[0], icon: '🐷' };
     }
+    return { name: str, icon: '📺' };
   }
 
-  // 刪除頻道（需回答數學題目驗證）
-  async function deleteChannel(chId, chName) {
-    const num1 = Math.floor(Math.random() * 9) + 2;
-    const num2 = Math.floor(Math.random() * 9) + 2;
-    const expectedAnswer = num1 + num2;
-
-    const userAnswer = prompt(`🔒 家長安全驗證：\n刪除頻道「${chName}」將會一併刪除該頻道所有影片。\n\n請回答問題以繼續：${num1} + ${num2} = ?`);
-
-    if (userAnswer === null) return;
-    
-    if (parseInt(userAnswer.trim()) !== expectedAnswer) {
-      alert("❌ 驗證失敗，答案不正確！");
-      return;
-    }
-
-    if (!confirm(`最後確認：真的要刪除頻道「${chName}」嗎？`)) return;
-
-    try {
-      // 1. 刪除頻道文檔
-      await db.collection('channels').doc(chId).delete();
-
-      // 2. 批量刪除該頻道的影片
-      const vidsSnapshot = await db.collection('videos').where('channelId', '==', chId).get();
-      const batch = db.batch();
-      vidsSnapshot.forEach(doc => batch.delete(doc.ref));
-      await batch.commit();
-
-      if (currentChannelFilter === chId) {
-        currentChannelFilter = 'all';
-      }
-
-      alert(`✅ 已成功刪除頻道「${chName}」及其相關影片！`);
-    } catch (e) {
-      alert("❌ 刪除頻道失敗：" + e.message);
-    }
-  }
-
-  async function refreshAllChannels() {
-    const realChannels = channels.filter(ch => ch.id !== 'all');
-    if (realChannels.length === 0) return alert("目前沒有可更新的頻道！");
-
-    const btn = document.getElementById('btn-refresh-all');
-    btn.innerText = "⏳ 刷新中...";
-    btn.disabled = true;
-
-    try {
-      for (const ch of realChannels) {
-        const chRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${ch.id}&key=${YOUTUBE_API_KEY}`);
-        const chData = await chRes.json();
-        
-        if (!chData.items || chData.items.length === 0) continue;
-        const uploadsPlaylistId = chData.items[0].contentDetails.relatedPlaylists.uploads;
-
-        const vidRes = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${uploadsPlaylistId}&maxResults=10&key=${YOUTUBE_API_KEY}`);
-        const vidData = await vidRes.json();
-
-        if (vidData.items && vidData.items.length > 0) {
-          const batch = db.batch();
-          vidData.items.forEach(item => {
-            const videoId = item.snippet.resourceId.videoId;
-            const videoTitle = item.snippet.title;
-            const publishedAt = item.contentDetails?.videoPublishedAt || item.snippet.publishedAt;
-            const docRef = db.collection('videos').doc(videoId);
-            
-            batch.set(docRef, {
-              title: videoTitle,
-              channelId: ch.id,
-              publishedAt: publishedAt,
-              createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
-          });
-          await batch.commit();
-        }
-      }
-      alert("🎉 所有頻道及發布日期已刷新！");
-    } catch(e) {
-      alert("❌ 刷新失敗：" + e.message);
-    } finally {
-      btn.innerText = "🔄 一鍵刷新所有頻道新片";
-      btn.disabled = false;
-    }
-  }
-
-  // ================= 4. Firebase 即時監聽與 UI 繪製 =================
   db.collection('channels').onSnapshot(snapshot => {
     channels = [{ id: 'all', name: '全部', icon: '🌈' }];
     snapshot.forEach(doc => channels.push({ id: doc.id, ...doc.data() }));
@@ -467,23 +282,22 @@
     videos = [];
     snapshot.forEach(doc => videos.push({ id: doc.id, ...doc.data() }));
     renderVideos();
-    
     if (videos.length > 0 && !document.getElementById('yt-player').src) {
       playVideo(videos[0].id, videos[0].title);
     }
   });
 
+  // 使用 Invidious 節點播放，成功解決「Playback on other websites has been disabled」問題
+  function playVideo(id, title) {
+    document.getElementById('yt-player').src = `https://yewtu.be/embed/${id}?autoplay=1`;
+    document.getElementById('now-playing-title').innerText = title;
+  }
+
   function renderChannels() {
     const container = document.getElementById('channel-list');
     const select = document.getElementById('new-vid-ch');
-    const adminList = document.getElementById('admin-channel-list');
-    
     container.innerHTML = '';
     select.innerHTML = '';
-    if (adminList) adminList.innerHTML = '';
-
-    let hasRealChannel = false;
-    const realChannels = channels.filter(ch => ch.id !== 'all');
 
     channels.forEach(ch => {
       const div = document.createElement('div');
@@ -500,38 +314,12 @@
       container.appendChild(div);
 
       if(ch.id !== 'all') {
-        hasRealChannel = true;
         const opt = document.createElement('option');
         opt.value = ch.id;
         opt.innerText = ch.name;
         select.appendChild(opt);
       }
     });
-
-    // 渲染 Modal 內的頻道刪除清單
-    if (adminList) {
-      if (realChannels.length === 0) {
-        adminList.innerHTML = '<div style="font-size:12px; color:#888; text-align:center;">目前沒有可管理的頻道</div>';
-      } else {
-        realChannels.forEach(ch => {
-          const item = document.createElement('div');
-          item.style.cssText = 'display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; font-size:13px;';
-          const safeName = (ch.name || '').replace(/'/g, "\\'");
-          item.innerHTML = `
-            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:200px;">${ch.icon.startsWith('http') ? '📺' : ch.icon} ${ch.name}</span>
-            <button onclick="deleteChannel('${ch.id}', '${safeName}')" style="background:#FF5252; color:white; border:none; padding:3px 8px; border-radius:6px; font-size:12px; cursor:pointer; font-weight:bold;">刪除</button>
-          `;
-          adminList.appendChild(item);
-        });
-      }
-    }
-
-    if (!hasRealChannel) {
-      const opt = document.createElement('option');
-      opt.value = "";
-      opt.innerText = "-- 請先在上面新增頻道 --";
-      select.appendChild(opt);
-    }
   }
 
   function renderVideos() {
@@ -553,14 +341,11 @@
       const card = document.createElement('div');
       card.className = 'video-card';
       const thumb = `https://img.youtube.com/vi/${v.id}/hqdefault.jpg`;
-      const dateText = formatDate(v.publishedAt);
-      const safeTitle = (v.title || '').replace(/'/g, "\\'");
 
       card.innerHTML = `
-        <img class="video-thumb" src="${thumb}" onclick="playVideo('${v.id}', '${safeTitle}')">
+        <img class="video-thumb" src="${thumb}" onclick="playVideo('${v.id}', '${v.title}')">
         <div class="video-info">
-          <div class="video-title" onclick="playVideo('${v.id}', '${safeTitle}')">${v.title}</div>
-          <div class="video-date">📅 ${dateText}</div>
+          <div class="video-title" onclick="playVideo('${v.id}', '${v.title}')">${v.title}</div>
           <div class="card-btns">
             <button class="icon-btn" onclick="toggleFav('${v.id}', ${v.favorite})">${v.favorite ? '⭐' : '☆'}</button>
             <button class="icon-btn" style="color:red;" onclick="deleteVid('${v.id}')">🗑️</button>
@@ -571,7 +356,6 @@
     });
   }
 
-  // ================= 5. 使用者互動事件 =================
   function filterByChannel(chId) {
     showFavOnly = false;
     currentChannelFilter = chId;
@@ -588,61 +372,47 @@
   }
 
   async function toggleFav(id, currentStatus) {
-    try {
-      await db.collection('videos').doc(id).update({ favorite: !currentStatus });
-    } catch(e) {
-      alert("修改失敗：" + e.message);
-    }
+    await db.collection('videos').doc(id).update({ favorite: !currentStatus });
   }
 
   async function deleteVid(id) {
     if(confirm('要刪除這部影片嗎？')) {
-      try {
-        await db.collection('videos').doc(id).delete();
-      } catch(e) {
-        alert("刪除失敗：" + e.message);
-      }
+      await db.collection('videos').doc(id).delete();
     }
   }
 
-  async function addSingleVideo() {
+  async function addChannel() {
+    const input = document.getElementById('new-ch-name').value;
+    const customIcon = document.getElementById('new-ch-icon').value.trim();
+    if(!input) return alert('請輸入頻道名稱或連結');
+
+    const parsed = parseChannelInfo(input);
+    const name = parsed.name;
+    const icon = customIcon || parsed.icon;
+
+    await db.collection('channels').add({ name, icon, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+    document.getElementById('new-ch-name').value = '';
+    document.getElementById('new-ch-icon').value = '';
+  }
+
+  async function addVideo() {
     const rawUrl = document.getElementById('new-vid-id').value;
-    const customTitle = document.getElementById('new-vid-title').value.trim();
+    const title = document.getElementById('new-vid-title').value.trim() || '未命名影片';
     const channelId = document.getElementById('new-vid-ch').value;
     
-    if (!channelId) return alert('請先自動新增一個頻道！');
     const id = extractVideoID(rawUrl);
     if(!id) return alert('無法辨識此 YouTube 連結！');
 
-    try {
-      let title = customTitle || '未命名影片';
-      let publishedAt = new Date().toISOString();
+    await db.collection('videos').doc(id).set({
+      title,
+      channelId,
+      favorite: false,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
 
-      if (YOUTUBE_API_KEY) {
-        const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${id}&key=${YOUTUBE_API_KEY}`);
-        const data = await res.json();
-        if (data.items && data.items.length > 0) {
-          const snip = data.items[0].snippet;
-          title = customTitle || snip.title;
-          publishedAt = snip.publishedAt;
-        }
-      }
-
-      await db.collection('videos').doc(id).set({
-        title,
-        channelId,
-        publishedAt,
-        favorite: false,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      }, { merge: true });
-
-      document.getElementById('new-vid-id').value = '';
-      document.getElementById('new-vid-title').value = '';
-      closeModal();
-      alert('✅ 單部影片新增成功！');
-    } catch(e) {
-      alert("失敗：" + e.message);
-    }
+    document.getElementById('new-vid-id').value = '';
+    document.getElementById('new-vid-title').value = '';
+    closeModal();
   }
 
   function openModal() { document.getElementById('admin-modal').style.display = 'flex'; }
