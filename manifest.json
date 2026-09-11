@@ -1,7 +1,7 @@
 {
   "name": "Welcome 💖澄澄💖",
-  "short_name": "KidsTube",
-  "description": "安全、專屬的兒童 YouTube 播放器",
+  "short_name": "AriasTube",
+  "description": "安全、專屬的Aria's YouTube 播放器",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#FFF8E7",
