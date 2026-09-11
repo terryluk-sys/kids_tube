@@ -322,6 +322,11 @@
   <div class="modal" id="admin-modal">
     <div class="modal-content">
       <h3>🔒 家長設定</h3>
+
+      <hr style="width:100%; margin: 6px 0;">
+      
+      <b>4. YouTube Premium 免廣告登入</b>
+      <button class="action-btn" style="background: #FF0000; color: white;" onclick="loginYouTube()">🔴 登入 YouTube Premium 帳號</button>
       
       <b>1. 自動新增頻道 (輸入 @Handle 或網址)</b>
       <input type="text" id="new-ch-input" placeholder="例: @PeppaPig">
@@ -346,6 +351,13 @@
   </div>
 
 <script>
+
+  // 開啟 YouTube 官網供家長登入 Premium 帳戶
+  function loginYouTube() {
+    alert("將打開 YouTube 官網，請登入擁有 Premium 的帳號。登入完成後關閉視窗即可！");
+    window.open('https://m.youtube.com', '_blank');
+  }
+  
   // 註冊 PWA Service Worker
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -677,14 +689,18 @@
       const dateText = formatDate(v.publishedAt);
       const safeTitle = (v.title || '').replace(/'/g, "\\'");
 
+      // ✅ 點擊整個卡片框架皆可播放
+      card.onclick = () => playVideo(v.id, safeTitle);
+
+      // ✅ event.stopPropagation() 可防止按刪除/收藏時誤觸卡片播放
       card.innerHTML = `
-        <img class="video-thumb" src="${thumb}" onclick="playVideo('${v.id}', '${safeTitle}')">
+        <img class="video-thumb" src="${thumb}">
         <div class="video-info">
-          <div class="video-title" onclick="playVideo('${v.id}', '${safeTitle}')">${v.title}</div>
+          <div class="video-title">${v.title}</div>
           <div class="video-date">📅 ${dateText}</div>
           <div class="card-btns">
-            <button class="icon-btn" onclick="toggleFav('${v.id}', ${v.favorite})">${v.favorite ? '⭐' : '☆'}</button>
-            <button class="icon-btn" style="color:red;" onclick="deleteVid('${v.id}')">🗑️</button>
+            <button class="icon-btn" onclick="event.stopPropagation(); toggleFav('${v.id}', ${v.favorite})">${v.favorite ? '⭐' : '☆'}</button>
+            <button class="icon-btn" style="color:red;" onclick="event.stopPropagation(); deleteVid('${v.id}')">🗑️</button>
           </div>
         </div>
       `;
