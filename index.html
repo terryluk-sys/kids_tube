@@ -9,6 +9,14 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
+  <!-- PWA 設定與 iOS 桌面圖示支援 -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#FF6B6B">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="KidsTube">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3845/3845808.png">
+
   <style>
     :root {
       --bg-color: #FFF8E7;
@@ -338,6 +346,14 @@
   </div>
 
 <script>
+  // 註冊 PWA Service Worker
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .catch(err => console.log('SW reg failed: ', err));
+    });
+  }
+  
   // 為了避免被 GitHub 掃描誤判為外洩金鑰，將 YouTube API Key 拆分成兩段字串
   const firebaseConfig = {
     apiKey: "AIzaSyC-i8XSzmM2AheKKkvL_Ni7GF2QlGTva3g",
